@@ -1,0 +1,18 @@
+using NoteService.Application.Models;
+
+namespace NoteService.Application.Interfaces;
+
+public interface INoteBl
+{
+    Task<NoteResponseDto?> CreateAsync(NoteRequestModel noteRequestModel, int userId);
+    Task<bool> DeleteAsync(int noteId, int userId);
+    Task<bool> UpdateAsync(NoteDomainModel noteDomainModel);
+    Task<IEnumerable<NoteResponseDto>?> GetAllNotesByUser(int userId);
+    Task<NoteResponseDto?> GetNoteById(int noteId, int userId);
+    Task<NoteResponseDto?> ArchiveNote(int noteId, int userId);
+    Task<NoteResponseDto?> UnArchiveNote(int noteId, int userId);
+    Task<List<NoteResponseDto>> GetArchivedNotes(int userId);
+    Task<NoteResponseDto?> TrashNote(int noteId, int userId);
+    Task<NoteResponseDto?> UnTrashNote(int noteId, int userId);
+    Task<List<NoteResponseDto>> GetTrashedNotes(int userId);
+}

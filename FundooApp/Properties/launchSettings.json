@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "FundooApp": {
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "commandName": "Project",
+      "applicationUrl": "https://localhost:7004;http://localhost:5036"
+    }
+  }
+}

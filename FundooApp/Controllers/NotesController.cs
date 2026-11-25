@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using BuildingBlocks.Common.Models;
-using NoteService.Application.Interfaces;
+using Businesslayer.Interface;
 using NoteService.Api.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ namespace NoteService.Api.Controllers;
 [ApiController]
 [ServiceFilter(typeof(ValidateUserContextFilter))]
 [Route("api/fundoo/[controller]")]
-public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : ControllerBase
+public class NotesController(INoteCommands noteCommands, INoteQueries noteQueries, ILogger<NotesController> logger) : ControllerBase
 {
     /// <summary>
     /// Retrieve all active notes by user
@@ -22,7 +22,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
     public async Task<IActionResult> GetAllNotesByUser()
     {
         var userId = (int)HttpContext.Items["userId"]!;
-        var notesByUser = await noteBl.GetAllNotesByUser(userId);
+        var notesByUser = await noteQueries.GetAllNotesByUser(userId);
 
         logger.LogInformation("Retrieved notes for user {UserId}", userId);
         return Ok(new ResponseModel<IEnumerable<NoteResponseDto>>()
@@ -44,7 +44,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
     {
         var userId = (int)HttpContext.Items["userId"]!;
         
-        var noteById = await noteBl.GetNoteById(noteId, userId);
+        var noteById = await noteQueries.GetNoteById(noteId, userId);
 
         if (noteById == null)
         {
@@ -76,7 +76,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
         var userId = (int)HttpContext.Items["userId"]!;
         
         logger.LogInformation("creating note with title {Title}", noteRequestModel.Title);
-        var createdNote = await noteBl.CreateAsync(noteRequestModel, userId);
+        var createdNote = await noteCommands.CreateAsync(noteRequestModel, userId);
         if (createdNote == null)
         {
             logger.LogWarning("Failed to create note {Title}", noteRequestModel.Title);
@@ -105,7 +105,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
         
         logger.LogInformation("updating note with title {Title}", note.Title);
 
-        var updated = await noteBl.UpdateAsync(new NoteDomainModel()
+        var updated = await noteCommands.UpdateAsync(new NoteDomainModel()
         {
             Id = noteId,
             Title = note.Title,
@@ -138,7 +138,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
         var userId = (int)HttpContext.Items["userId"]!;
         
         logger.LogInformation("deleting note {NoteId}", noteId);
-        var result = await noteBl.DeleteAsync(noteId, userId);
+        var result = await noteCommands.DeleteAsync(noteId, userId);
         if (!result)
         {
             logger.LogWarning("Deleting failed, note {NoteId} could not be deleted", noteId);
@@ -162,7 +162,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
         logger.LogInformation("Archiving note {NoteId}", noteId);
         var userId = (int)HttpContext.Items["userId"]!;
         
-        var note = await noteBl.ArchiveNote(noteId, userId);
+        var note = await noteCommands.ArchiveNote(noteId, userId);
         if (note == null)
         {
             logger.LogWarning("Archiving failed, note {NoteId} not Archived", noteId);
@@ -193,7 +193,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
         logger.LogInformation("Unarchiving note {NoteId}", noteId);
         var userId = (int)HttpContext.Items["userId"]!;
         
-        var note = await noteBl.UnArchiveNote(noteId, userId);
+        var note = await noteCommands.UnArchiveNote(noteId, userId);
         if (note == null)
         {
             logger.LogWarning("Not unarchived note {NoteId}", noteId);
@@ -222,7 +222,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
     {
         var userId = (int)HttpContext.Items["userId"]!;
 
-        var notes = await noteBl.GetArchivedNotes(userId);
+        var notes = await noteQueries.GetArchivedNotes(userId);
 
         logger.LogInformation("Retrieved Archived notes");
         return Ok(new ResponseModel<List<NoteResponseDto>>
@@ -245,7 +245,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
         logger.LogInformation("Trashing note {NoteId}", noteId);
         var userId = (int)HttpContext.Items["userId"]!;
 
-        var note = await noteBl.TrashNote(noteId, userId);
+        var note = await noteCommands.TrashNote(noteId, userId);
         if (note == null)
         {
             logger.LogWarning("Trashing failed, note {NoteId} not Trashed", noteId);
@@ -276,7 +276,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
         logger.LogInformation("Untrashing note {NoteId}", noteId);
         var userId = (int)HttpContext.Items["userId"]!;
         
-        var note = await noteBl.UnTrashNote(noteId, userId);
+        var note = await noteCommands.UnTrashNote(noteId, userId);
         if (note == null)
         {
             logger.LogWarning("Not untrashed note {NoteId}", noteId);
@@ -305,7 +305,7 @@ public class NotesController(INoteBl noteBl, ILogger<NotesController> logger) : 
     {
         var userId = (int)HttpContext.Items["userId"]!;
 
-        var notes = await noteBl.GetTrashedNotes(userId);
+        var notes = await noteQueries.GetTrashedNotes(userId);
 
         logger.LogInformation("Retrieved Trashed notes");
         return Ok(new ResponseModel<List<NoteResponseDto>>

@@ -1,14 +1,14 @@
-using System.Text.Json;
-using NoteService.Application.Interfaces;
+﻿using System.Text.Json;
+using Businesslayer.Interface;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using NoteService.Application.Models;
 using NoteService.Domain.Entities;
 using NoteService.Infrastructure.Interfaces;
 
-namespace NoteService.Application.Services;
+namespace Businesslayer.Service;
 
-public class NoteBl(INoteRl noteRl, IDistributedCache cache, ILogger<NoteBl> logger) : INoteBl
+public class NoteCommands(INoteRl noteRl, IDistributedCache cache, ILogger<NoteCommands> logger) : INoteCommands
 {
     private readonly INoteRl _noteRl = noteRl;
 
@@ -70,7 +70,8 @@ public class NoteBl(INoteRl noteRl, IDistributedCache cache, ILogger<NoteBl> log
     {
         if (noteDomainModel == null || noteDomainModel.Id <= 0 || noteDomainModel.UserId <= 0)
         {
-            logger.LogWarning("Invalid NoteDomainModel: NoteId={NoteId}, UserId={UserId}", noteDomainModel?.Id, noteDomainModel?.UserId);
+            logger.LogWarning("Invalid NoteDomainModel: NoteId={NoteId}, UserId={UserId}", noteDomainModel?.Id,
+                noteDomainModel?.UserId);
             return false;
         }
 
@@ -94,57 +95,6 @@ public class NoteBl(INoteRl noteRl, IDistributedCache cache, ILogger<NoteBl> log
         }
 
         return result;
-    }
-
-    public async Task<IEnumerable<NoteResponseDto>?> GetAllNotesByUser(int userId)
-    {
-        if (userId <= 0)
-        {
-            logger.LogWarning("Invalid UserId {UserId}", userId);
-            return null;
-        }
-        
-        var key = $"Notes:User:{userId}:All";
-        var cached = await SafeGetStringAsync(key);
-        if (cached is not null)
-        {
-            logger.LogInformation("All notes found in Redis cache with key {Key}", key);
-            return JsonSerializer.Deserialize<IEnumerable<NoteResponseDto>>(cached);
-        }
-
-        var noteEntities = await _noteRl.GetAllNotesByUser(userId);
-        var notes = noteEntities.Select(ToDto).ToList();
-
-        logger.LogInformation("Cached {Count} notes for user {UserId}", notes.Count, userId);
-        await SafeSetStringAsync(key, JsonSerializer.Serialize(notes), DefaultCacheOptions);
-
-        return notes;
-    }
-
-    public async Task<NoteResponseDto?> GetNoteById(int noteId, int userId)
-    {
-        if (userId <= 0 || noteId <= 0)
-        {
-            logger.LogWarning("Invalid NoteId {NoteId} or UserId {UserId}", noteId, userId);
-            return null;
-        }
-
-        var key = $"Notes:User:{userId}:{noteId}";
-        var cached = await SafeGetStringAsync(key);
-        if (cached is not null)
-        {
-            logger.LogInformation("Note found in Redis cache with key {Key}", key);
-            return JsonSerializer.Deserialize<NoteResponseDto>(cached);
-        }
-
-        var noteEntity = await _noteRl.GetNoteById(noteId, userId);
-        if (noteEntity == null) return null;
-
-        var note = ToDto(noteEntity);
-
-        logger.LogInformation("Cached note with key {Key}", key);
-        await SafeSetStringAsync(key, JsonSerializer.Serialize(note), DefaultCacheOptions);
-        return note;
     }
 
     public Task<NoteResponseDto?> ArchiveNote(int noteId, int userId)
@@ -171,18 +121,6 @@ public class NoteBl(INoteRl noteRl, IDistributedCache cache, ILogger<NoteBl> log
         return ToDto(note);
     }
 
-    public async Task<List<NoteResponseDto>> GetArchivedNotes(int userId)
-    {
-        if (userId <= 0)
-        {
-            logger.LogWarning("Invalid UserId {UserId}", userId);
-            return [];
-        }
-
-        var note = await _noteRl.GetArchived(userId);
-        return note.Select(ToDto).ToList();
-    }
-
     public Task<NoteResponseDto?> TrashNote(int noteId, int userId)
         => SetTrashed(noteId, userId, true);
 
@@ -205,18 +143,6 @@ public class NoteBl(INoteRl noteRl, IDistributedCache cache, ILogger<NoteBl> log
         logger.LogInformation("Invalidated cache for note {NoteId} and user {UserId}", noteId, userId);
 
         return ToDto(note);
-    }
-
-    public async Task<List<NoteResponseDto>> GetTrashedNotes(int userId)
-    {
-        if (userId <= 0)
-        {
-            logger.LogWarning("Invalid UserId {UserId}", userId);
-            return [];
-        }
-
-        var notes = await _noteRl.GetTrashed(userId);
-        return notes.Select(ToDto).ToList();
     }
 
     private async Task SafeRemoveCacheAsync(string key)

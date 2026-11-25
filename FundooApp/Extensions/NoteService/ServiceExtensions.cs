@@ -1,11 +1,11 @@
 using System.Text;
+using Businesslayer.Interface;
+using Businesslayer.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NoteService.Api.Filters;
-using NoteService.Application.Interfaces;
 using NoteService.Application.Models.Options;
-using NoteService.Application.Services;
 using NoteService.Infrastructure.Context;
 using NoteService.Infrastructure.Interfaces;
 using NoteService.Infrastructure.Repositories;
@@ -16,7 +16,8 @@ public static class ServiceExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        services.AddScoped<INoteBl, NoteBl>();
+        services.AddScoped<INoteQueries, NoteQueries>();
+        services.AddScoped<INoteCommands, NoteCommands>();
         services.AddScoped<INoteRl, NoteRl>();
         services.AddScoped<ValidateUserContextFilter>();
         services.AddHealthChecks();

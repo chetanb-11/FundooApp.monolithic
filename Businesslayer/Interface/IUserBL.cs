@@ -4,6 +4,7 @@ namespace UserService.Application.Interfaces;
 
 public interface IUserBl
 {
+    Task<List<UserResponseDto>> GetAllUsersAsync();
     Task<UserResponseDto?> RegisterUser(UserRegistrationReq userReq);
     public Task<bool> UserExistsAsync(string email);
     public Task<bool> UserExistsByIdAsync(int userId);

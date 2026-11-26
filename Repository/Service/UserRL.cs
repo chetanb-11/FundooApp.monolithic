@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using UserService.Application.Models;
 using UserService.Domain.Entities;
 using UserService.Domain.Models;
 using UserService.Infrastructure.Context;
@@ -11,6 +12,21 @@ public class UserRl(UserDbContext dbContext, ILogger<UserRl> logger) : IUserRl
 {
     private readonly UserDbContext _dbContext = dbContext;
     private readonly ILogger<UserRl> _logger = logger;
+
+    public Task<List<UserResponseDto>> GetAllUsersAsync()
+    {
+        return _dbContext.Users
+            .OrderBy(user => user.Id)
+            .Select(user => new UserResponseDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                Role = user.Role
+            })
+            .ToListAsync();
+    }
 
     public async Task<UserDomainModel?> RegisterUserAsync(UserDomainModel user)
     {

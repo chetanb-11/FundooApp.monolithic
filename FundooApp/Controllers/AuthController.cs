@@ -152,8 +152,14 @@ public class AuthController(IUserBl userBl, ILogger<AuthController> logger) : Co
 
     [Authorize(Roles = "Admin")]
     [HttpGet("all-users")]
-    public IActionResult GetAllUsers()
+    public async Task<IActionResult> GetAllUsers()
     {
-        return Ok();
+        var users = await userBl.GetAllUsersAsync();
+        return Ok(new ResponseModel<List<UserResponseDto>>
+        {
+            Success = true,
+            Message = "Users retrieved successfully",
+            Data = users
+        });
     }
 }

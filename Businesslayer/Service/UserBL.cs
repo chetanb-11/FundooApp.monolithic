@@ -15,6 +15,11 @@ public class UserBl(
     IEmailProducerService emailProducerService)
     : IUserBl
 {
+    public Task<List<UserResponseDto>> GetAllUsersAsync()
+    {
+        return userRl.GetAllUsersAsync();
+    }
+
     public async Task<UserResponseDto?> RegisterUser(UserRegistrationReq userReq)
     {
         logger.LogInformation("Attempting registration for {Email}", userReq.Email);
